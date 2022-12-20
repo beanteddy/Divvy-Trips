@@ -184,32 +184,33 @@ all_trips_v2 %>%
 v1 <- all_trips_v2 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
-  summarise(number_of_rides = n()
-            ,average_duration = mean(ride_length)) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
   arrange(member_casual, weekday)  %>% 
-  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
-  geom_col(position = "dodge")
+  ggplot(aes(x = weekday, y = number_of_rides/1000, fill = member_casual)) +
+  geom_col(position = "dodge") 
+
+v1 + ggtitle("Plot of number of rides by rider type") +
+xlab("Weekday") + ylab("numberof rides in Thousands(K)") +
+labs(fill="Memeber Type")
+
 
 # Let's create a visualization for average duration
 v2 <- all_trips_v2 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
-  summarise(number_of_rides = n()
-            ,average_duration = mean(ride_length)) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
   arrange(member_casual, weekday)  %>% 
   ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
-  geom_col(position = "dodge")
+  geom_col(position = "dodge") 
 
-
+v2 + ggtitle("Plot of number of rides average_duration") +
+  xlab("Weekday") + ylab("average_duration in Seconds(s)") +
+  labs(fill="Memeber Type")
 #=================================================
 # STEP 5: EXPORT SUMMARY FILE FOR FURTHER ANALYSIS
 #=================================================
 #save the visualisation 
 ggsave(v1, file = "v1.png")
 ggsave(v2, file = "v2.png")
-
-
-# Create a csv file that we will visualize in Excel, Tableau, or my presentation software
-write.csv(all_trips_v2, file = 'C:\Users\andypc\Desktop\GDA\Week 1\divvy\ride.csv')
 
 
