@@ -16,6 +16,7 @@ library(ggplot2)    #helps visualize data
 # STEP 1: COLLECT DATA
 #=====================
 # Upload Divvy datasets (csv files) here
+
 q2_2019 <- read_csv("Divvy_Trips_2019_Q2.csv")
 q3_2019 <- read_csv("Divvy_Trips_2019_Q3.csv")
 q4_2019 <- read_csv("Divvy_Trips_2019_Q4.csv")
@@ -34,21 +35,42 @@ colnames(q4_2019)
 colnames(q2_2019)
 colnames(q1_2020)  
 
-# Rename columns to make them consistent with q1_2020 (as this will be the supposed going-forward table design for Divvy)
+# Rename columns to make them consistent with q1_2020 
+(q4_2019 <- rename(q4_2019
+                   ,ride_id = trip_id
+                   ,rideable_type = bikeid 
+                   ,started_at = start_time  
+                   ,ended_at = end_time  
+                   ,start_station_name = from_station_name 
+                   ,start_station_id = from_station_id 
+                   ,end_station_name = to_station_name 
+                   ,end_station_id = to_station_id 
+                   ,member_casual = usertype))
 
-for (df in list(q4_2019, q3_2019, q2_2019)) {
-  df <- rename(df,
-               ride_id = trip_id,
-               rideable_type = bikeid,
-               started_at = start_time,
-               ended_at = end_time,
-               start_station_name = from_station_name,
-               start_station_id = from_station_id,
-               end_station_name = to_station_name,
-               end_station_id = to_station_id,
-               member_casual = usertype)
-  assign(deparse(substitute(df)), df, envir = .GlobalEnv)
-}
+(q3_2019 <- rename(q3_2019
+                   ,ride_id = trip_id
+                   ,rideable_type = bikeid 
+                   ,started_at = start_time  
+                   ,ended_at = end_time  
+                   ,start_station_name = from_station_name 
+                   ,start_station_id = from_station_id 
+                   ,end_station_name = to_station_name 
+                   ,end_station_id = to_station_id 
+                   ,member_casual = usertype))
+
+
+(q2_2019 <- rename(q2_2019
+                   ,ride_id = "01 - Rental Details Rental ID"
+                   ,rideable_type = "01 - Rental Details Bike ID" 
+                   ,started_at = "01 - Rental Details Local Start Time"  
+                   ,ended_at = "01 - Rental Details Local End Time"  
+                   ,start_station_name = "03 - Rental Start Station Name" 
+                   ,start_station_id = "03 - Rental Start Station ID"
+                   ,end_station_name = "02 - Rental End Station Name" 
+                   ,end_station_id = "02 - Rental End Station ID"
+                   ,member_casual = "User Type"))
+
+
 
 # Convert ride_id and rideable_type to character so that they can stack correctly
 q4_2019 <-  mutate(q4_2019, ride_id = as.character(ride_id)
@@ -63,7 +85,7 @@ all_trips <- bind_rows(q2_2019, q3_2019, q4_2019, q1_2020)
 
 # Remove lat, long, birthyear, and gender fields as this data to be dropped beginning in 2020
 all_trips <- all_trips %>%  
-  select(-c(start_lat, start_lng, end_lat, end_lng, birthyear, gender))
+  select(-c(start_lat, start_lng, end_lat, end_lng, birthyear, gender, "01 - Rental Details Duration In Seconds Uncapped", "05 - Member Details Member Birthday Year", "Member Gender", "tripduration"))
 
 #======================================================
 # STEP 3: CLEAN UP AND ADD DATA TO PREPARE FOR ANALYSIS
@@ -85,8 +107,8 @@ summary(all_trips)  #Statistical summary of data. Mainly for numerics
 # Reassign to the desired values with the current 2020 labels (Part 1)
 all_trips <-  all_trips %>% 
   mutate(member_casual = recode(member_casual
-                           ,"Subscriber" = "member"
-                           ,"Customer" = "casual"))
+                                ,"Subscriber" = "member"
+                                ,"Customer" = "casual"))
 
 # Check to make sure the proper number of observations were reassigned
 table(all_trips$member_casual)
@@ -125,7 +147,7 @@ all_trips_v2$day_of_week <- ordered(all_trips_v2$day_of_week, levels=c("Sunday",
 # STEP 4: CONDUCT DESCRIPTIVE ANALYSIS
 #=====================================
 # Descriptive analysis on ride_length (all figures in seconds)
- 
+
 # Both members and casual users
 cat("The value of average (total ride length / rides) is", mean(all_trips_v2$ride_length) , "s" , "\n")
 cat("The value of midpoint ride lengths is", median(all_trips_v2$ride_length) , "s" ,"\n")
@@ -150,16 +172,16 @@ aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$d
 aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + all_trips_v2$day_of_week, FUN = mean)
 
 # analyze ridership data by type and weekday
-v1 <- all_trips_v2 %>% 
+all_trips_v2 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>%  
   group_by(member_casual, weekday) %>%                 
   summarise(number_of_rides = n()						          	
-  ,average_duration = mean(ride_length)) %>% 		       
+            ,average_duration = mean(ride_length)) %>% 		       
   arrange(member_casual, weekday)							         
 
 
 # Let's visualize the number of rides by rider type
-v2 <- all_trips_v2 %>% 
+v1 <- all_trips_v2 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
   summarise(number_of_rides = n()
@@ -169,7 +191,7 @@ v2 <- all_trips_v2 %>%
   geom_col(position = "dodge")
 
 # Let's create a visualization for average duration
-v3 <- all_trips_v2 %>% 
+v2 <- all_trips_v2 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
   summarise(number_of_rides = n()
@@ -178,18 +200,16 @@ v3 <- all_trips_v2 %>%
   ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
   geom_col(position = "dodge")
 
-#save the visualisation 
-ggsave(v1, file = "v1.png")
-ggsave(v2, file = "v2.png")
-ggsave(v3, file = "v3.png")
 
 #=================================================
 # STEP 5: EXPORT SUMMARY FILE FOR FURTHER ANALYSIS
 #=================================================
+#save the visualisation 
+ggsave(v1, file = "v1.png")
+ggsave(v2, file = "v2.png")
+
+
 # Create a csv file that we will visualize in Excel, Tableau, or my presentation software
 write.csv(all_trips_v2, file = 'C:\Users\andypc\Desktop\GDA\Week 1\divvy\ride.csv')
-
-
-
 
 
