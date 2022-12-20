@@ -182,7 +182,7 @@ all_trips_v2 %>%
   arrange(member_casual, weekday)							         
 
 
-# Let's visualize the number of rides by rider type
+# visualization for the number of rides by rider type
 v1 <- all_trips_v2 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
@@ -196,7 +196,7 @@ xlab("Weekday") + ylab("numberof rides in Thousands(K)") +
 labs(fill="Memeber Type")
 
 
-# Let's create a visualization for average duration
+# visualization for average duration
 v2 <- all_trips_v2 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
@@ -209,27 +209,19 @@ v2 + ggtitle("Plot of number of rides average_duration") +
   xlab("Weekday") + ylab("average_duration in Seconds(s)") +
   labs(fill="Memeber Type")
 
-# Let's create a visualization for average duration
-v2 <- all_trips_v2 %>% 
-  mutate(weekday = wday(started_at, label = TRUE)) %>% 
-  group_by(member_casual, weekday) %>% 
-  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
-  arrange(member_casual, weekday)  %>% 
-  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
-  geom_col(position = "dodge") 
 
-v2 + ggtitle("Plot of number of rides average_duration") +
-  xlab("Weekday") + ylab("average_duration in Seconds(s)") +
-  labs(fill="Memeber Type")
 
-# Let's create a visualization for average duration
+# create a moving visualization for average duration
 all_trips_v3 <- all_trips_v2
 
 
 v3 <- all_trips_v3 %>% 
-  ggplot(aes(x = started_at, y = max(ride_length))) +
+  group_by(member_casual) %>% 
+  summarise(number_of_rides = n(),max_duration = max(ride_length)) %>% 
+  arrange(member_casual)  %>%
+  ggplot(aes(x = started_at, y = max_duration, fill = member_casual)) +
   geom_line() + 
-  labs(x='Date',y ='Average Duration(s)', title ='Moving Average over a year' )+
+  labs(x='Date',y ='Average Duration(s)', title ='Moving Max Duration over a year' )+
   transition_reveal(started_at)+
   view_follow(fixed_y = TRUE)
   
