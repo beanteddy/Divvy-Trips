@@ -2,15 +2,17 @@
 # This analysis is based on the Divvy case study and Data Visualization" 
 
 # # # # # # # # # # # # # # # # # # # # # # # 
-# Install required packages
-# tidyverse for data import and wrangling
-# lubridate for date functions
-# ggplot for visualization
+# Install required packages and load the packages below
 # # # # # # # # # # # # # # # # # # # # # # #  
 
-library(tidyverse)  #helps wrangle data
-library(lubridate)  #helps wrangle date attributes
-library(ggplot2)    #helps visualize data
+library(tidyverse)  
+library(lubridate)  
+library(ggplot2)    
+library(zoo) 
+library(timetk) 
+library(gganimate) 
+library(gifski) 
+library(av)
 
 #=====================
 # STEP 1: COLLECT DATA
@@ -206,11 +208,38 @@ v2 <- all_trips_v2 %>%
 v2 + ggtitle("Plot of number of rides average_duration") +
   xlab("Weekday") + ylab("average_duration in Seconds(s)") +
   labs(fill="Memeber Type")
+
+# Let's create a visualization for average duration
+v2 <- all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n(),average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") 
+
+v2 + ggtitle("Plot of number of rides average_duration") +
+  xlab("Weekday") + ylab("average_duration in Seconds(s)") +
+  labs(fill="Memeber Type")
+
+# Let's create a visualization for average duration
+all_trips_v3 <- all_trips_v2
+
+
+v3 <- all_trips_v3 %>% 
+  ggplot(aes(x = started_at, y = max(ride_length))) +
+  geom_line() + 
+  labs(x='Date',y ='Average Duration(s)', title ='Moving Average over a year' )+
+  transition_reveal(started_at)+
+  view_follow(fixed_y = TRUE)
+  
+
+animate(v3, nframes = 144, fps = 10, width = 800 , height = 500)
 #=================================================
 # STEP 5: EXPORT SUMMARY FILE FOR FURTHER ANALYSIS
 #=================================================
 #save the visualisation 
 ggsave(v1, file = "v1.png")
 ggsave(v2, file = "v2.png")
-
+anim_save('v3.gif' , v3)
 
